@@ -98,7 +98,7 @@ class MultiScaleDeformableAttention(nn.Module):
             dim=-1
         )
 
-        reference_points = reference_points.unsqueeze(2).unsqueeze(4)
+        # reference_points = reference_points.unsqueeze(2).unsqueeze(4)
        
 
         #Calculate Sampling Locations
@@ -106,13 +106,56 @@ class MultiScaleDeformableAttention(nn.Module):
             :, [1,0]
         ]
 
-        sampling_locations = (
-            reference_points
-            +
-            sampling_offsets / normalizer[
-                None,None,None,:,None,:
+        print("reference_points:", reference_points.shape)
+        print("sampling_offsets:", sampling_offsets.shape)
+        print("normalizer:", normalizer.shape)
+
+
+        if reference_points.shape[-1] == 2:
+
+            #Reference points: [x,y]
+            sampling_locations = (
+                reference_points[:,:,None, :,None,:]
+                +
+                sampling_offsets / normalizer[
+                    None,None,None,:,None,:
+                ]
+            )
+
+            print("Reference point shape is 2")
+
+        elif reference_points.shape[-1] == 4:
+
+            reference_centers = reference_points[...,:2]
+            reference_sizes = reference_points[...,2:]
+            reference_centers = reference_centers[
+                :,:,None,:,None,:
             ]
-        )
+            reference_sizes = reference_sizes[
+                :,:,None,:,None,:
+            ]
+
+            #Reference boxes: [x,y,w,h]
+            sampling_locations = (
+            reference_centers
+            +
+            sampling_offsets
+            *
+            reference_sizes
+            *0.5
+            /self.num_points
+            )
+
+            print("Reference point shape is 4")
+
+        else:
+            raise ValueError(
+                "Reference points must have"
+                "last dimension of 2 or 4"
+            )
+
+        print("sampling_location:", sampling_locations.shape)
+        
 
         #Sample Feature Maps
         output = self.sample_features(

@@ -8,12 +8,12 @@ class ReferencePointEmbedding(nn.Module):
                  temperature=10000):
         super().__init__()
 
-        assert hidden_dim % 4 == 0
+        assert hidden_dim % 8 == 0
 
         self.hidden_dim = hidden_dim
         self.temperature = temperature
 
-        self.coord_dim = hidden_dim // 4
+        self.coord_dim = hidden_dim // 8
 
     def forward(self, reference_boxes):
         # [B, Q, 4]

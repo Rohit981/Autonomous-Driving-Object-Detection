@@ -9,6 +9,15 @@ class MixedQuerySelection(nn.Module):
         super().__init__()
 
         self.num_queries = num_queries
+        self.hidden_dim = hidden_dims
+
+        #Learned content queries
+        #These are the decoder target/content embeddings
+
+        self.query_content = nn.Embedding(
+            num_queries,
+            hidden_dims
+        )
 
         #Encoder Classification scores
         self.class_head = nn.Linear(
@@ -20,12 +29,6 @@ class MixedQuerySelection(nn.Module):
         self.bbox_head = nn.Linear(
             hidden_dims,
             4
-        )
-
-        #Transform selected encoder features into decoder content queries
-        self.query_projection = nn.Linear(
-            hidden_dims,
-            hidden_dims
         )
 
     def forward(self, memory):
@@ -48,7 +51,7 @@ class MixedQuerySelection(nn.Module):
         # [B, total_tokens]
         #Select top-K encoder features
 
-        topk_scores, topk_indices = torch.topk(
+        _, topk_indices = torch.topk(
             scores,
             k = self.num_queries,
             dim=1
@@ -56,42 +59,33 @@ class MixedQuerySelection(nn.Module):
 
         #topk_indices:
         #[B, num_queries]
+        #Predict encoder reference boxes
 
-        #Select corresponding encoder features
-
-        query_features = torch.gather(
-            memory,
-            dim=1,
-            index=topk_indices.unsqueeze(-1).expand(
-                -1,
-                -1,
-                memory.shape[-1]
-            )
-        )
-
-        # [B, num_queries, hidden_dim]
-        #Generate decoder content queries
-
-        target = self.query_projection(
-            query_features
-        )
-
-        #Generate reference boxes
-        bbox_predictions = self.bbox_head(
+        all_reference_boxes = self.bbox_head(
             memory
-        )
+        ).sigmoid()
 
-        bbox_predictions = bbox_predictions.sigmoid()
+        #Select TOP-K reference boxes
 
-        # [B, total_tokens, 4]
         reference_boxes = torch.gather(
-            bbox_predictions,
+            all_reference_boxes,
             dim=1,
             index=topk_indices.unsqueeze(-1).expand(
                 -1,
                 -1,
                 4
             )
+        )
+
+        # [B, num_queries, hidden_dim]
+        #Generate decoder content queries
+
+        target = self.query_content.weight.unsqueeze(
+            0
+        ).expand(
+            batch_size,
+            -1,
+            -1
         )
 
         # [B, num_queries,4]
@@ -101,3 +95,29 @@ class MixedQuerySelection(nn.Module):
             topk_indices
         )
     
+#Test
+B=2
+TOTAL_TOKENS=84
+HIDDEN_DIM=64
+NUM_CLASSES=10
+NUM_QUERIES=10
+
+memory = torch.randn(
+    B,
+    TOTAL_TOKENS,
+    HIDDEN_DIM
+)
+
+model = MixedQuerySelection(
+    hidden_dims=HIDDEN_DIM,
+    num_classes=NUM_CLASSES,
+    num_queries=NUM_QUERIES
+)
+
+target, reference_boxes,topk_indices = model(
+    memory
+)
+
+print("Target:", target.shape)
+print("Reference Boxes:", reference_boxes.shape)
+print("TOPK Indices:", topk_indices.shape)
