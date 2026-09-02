@@ -46,33 +46,33 @@ class BoundingBoxHead(nn.Module):
         return self.bbox_head(x)
 
 #TEST
-B = 2
-NUM_QUERIES = 10
-HIDDEN_DIM = 64
-NUM_CLASSES = 10
+# B = 2
+# NUM_QUERIES = 10
+# HIDDEN_DIM = 64
+# NUM_CLASSES = 10
 
-decoder_features = torch.randn(
-    B,
-    NUM_QUERIES,
-    HIDDEN_DIM
-)
+# decoder_features = torch.randn(
+#     B,
+#     NUM_QUERIES,
+#     HIDDEN_DIM
+# )
 
-class_head = ClassificationHead(
-    hidden_dim=HIDDEN_DIM,
-    num_classes=NUM_CLASSES
-)
+# class_head = ClassificationHead(
+#     hidden_dim=HIDDEN_DIM,
+#     num_classes=NUM_CLASSES
+# )
 
-bbox_head = BoundingBoxHead(
-    hidden_dim=HIDDEN_DIM
-)
+# bbox_head = BoundingBoxHead(
+#     hidden_dim=HIDDEN_DIM
+# )
 
-class_logits = class_head(
-    decoder_features
-)
+# class_logits = class_head(
+#     decoder_features
+# )
 
-bbox_output = bbox_head(
-    decoder_features
-)
+# bbox_output = bbox_head(
+#     decoder_features
+# )
 
-print("Class Logits:", class_logits.shape)
-print("BBOX OUTPUT:", bbox_output.shape)
+# print("Class Logits:", class_logits.shape)
+# print("BBOX OUTPUT:", bbox_output.shape)

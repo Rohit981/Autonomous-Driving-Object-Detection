@@ -6,6 +6,7 @@ import copy
 from Deformable_Attention import MultiScaleDeformableAttention, get_reference_points
 from reference_embedding import ReferencePointEmbedding
 from prediction_heads import ClassificationHead, BoundingBoxHead
+from bbox_refinement import BBoxRefinement
 
 class DecoderSelfAttention(nn.Module):
     def __init__(self,
@@ -217,6 +218,8 @@ class DeformableDecoder(nn.Module):
             for _ in range(num_layers)
         ])
 
+        self.bbox_refinement = BBoxRefinement()
+
     def forward(self,
                 query,
                 reference_boxes,
@@ -250,10 +253,17 @@ class DeformableDecoder(nn.Module):
                 query
             )
 
+            refined_boxes = self.bbox_refinement(
+                reference_boxes,
+                bbox_delta
+            )
+
             #Store decoder features
-            intermediate_boxes.append(bbox_delta)
+            intermediate_boxes.append(refined_boxes)
             intermediate_outputs.append(query)
             intermediate_class_logits.append(class_logits)
+
+            reference_boxes = refined_boxes.detach()
 
         return(
             intermediate_outputs,
