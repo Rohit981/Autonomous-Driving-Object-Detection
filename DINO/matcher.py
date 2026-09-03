@@ -204,68 +204,68 @@ class HungarianMatcher(nn.Module):
         )
 
 #Test
-B= 2
-NUM_QUERIES = 10
-NUM_CLASSES = 10
+# B= 2
+# NUM_QUERIES = 10
+# NUM_CLASSES = 10
 
-class_logits = torch.randn(
-    B,
-    NUM_QUERIES,
-    NUM_CLASSES
-)
+# class_logits = torch.randn(
+#     B,
+#     NUM_QUERIES,
+#     NUM_CLASSES
+# )
 
-pred_boxes = torch.rand(
-    B,
-    NUM_QUERIES,
-    4
-)
+# pred_boxes = torch.rand(
+#     B,
+#     NUM_QUERIES,
+#     4
+# )
 
-targets = [
-    {
-        "labels": torch.tensor(
-            [1,3,5]
-        ),
-        "boxes": torch.rand(
-            3,
-            4
-        )
-    },
-    {
-        "labels": torch.tensor(
-            [2,4]
-        ),
+# targets = [
+#     {
+#         "labels": torch.tensor(
+#             [1,3,5]
+#         ),
+#         "boxes": torch.rand(
+#             3,
+#             4
+#         )
+#     },
+#     {
+#         "labels": torch.tensor(
+#             [2,4]
+#         ),
 
-        "boxes": torch.rand(
-            2,
-            4
-        )
-    }
-]
+#         "boxes": torch.rand(
+#             2,
+#             4
+#         )
+#     }
+# ]
 
-matcher = HungarianMatcher()
+# matcher = HungarianMatcher()
 
-indices = matcher(
-    class_logits,
-    pred_boxes,
-    targets
-)
+# indices = matcher(
+#     class_logits,
+#     pred_boxes,
+#     targets
+# )
 
-for batch_idx, (
-    prediction_indices,
-    target_indices
-) in enumerate(indices):
+# for batch_idx, (
+#     prediction_indices,
+#     target_indices
+# ) in enumerate(indices):
 
-    print(
-        f"\nBatch {batch_idx}"
-    )
+#     print(
+#         f"\nBatch {batch_idx}"
+#     )
 
-    print(
-        "Matched predictions:",
-        prediction_indices
-    )
+#     print(
+#         "Matched predictions:",
+#         prediction_indices
+#     )
 
-    print(
-        "Matched targets:",
-        target_indices
-    )
+#     print(
+#         "Matched targets:",
+#         target_indices
+#     )
 

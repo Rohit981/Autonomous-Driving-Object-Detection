@@ -231,7 +231,7 @@ class DeformableDecoder(nn.Module):
         intermediate_class_logits = []
         intermediate_boxes = []
 
-        #Process each decoder layer
+        #Process each decoder layer, auxiliary layer decoder
         for layer_id, layer in enumerate(self.layers):
 
             #Run Decoder layer
