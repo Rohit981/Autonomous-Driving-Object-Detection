@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from scipy.optimize import linear_sum_assignment
 from torchvision.ops import generalized_box_iou
@@ -9,17 +8,21 @@ class HungarianMatcher(nn.Module):
     def __init__(self,
                  cost_class=1.0,
                  cost_bbox=5.0,
-                 cost_giou=2.0):
+                 cost_giou=2.0,
+                 focal_alpha=0.25,
+                 focal_gamma=2.0):
         super().__init__()
 
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
         self.cost_giou = cost_giou
+        self.focal_alpha = focal_alpha
+        self.focal_gamma = focal_gamma
 
-        if (
-            cost_class==0
-            and cost_bbox==0
-            and cost_giou==0
+        if(
+            cost_class == 0
+            and cost_bbox == 0
+            and cost_giou == 0
         ):
             raise ValueError(
                 "At least one matching cost must be non-zero"
@@ -32,7 +35,7 @@ class HungarianMatcher(nn.Module):
         pred_boxes,
         targets
     ):
-        batch_size, num_queries, num_classes =(
+        batch_size, num_queries, num_classes = (
             class_logits.shape
         )
 
@@ -40,7 +43,7 @@ class HungarianMatcher(nn.Module):
 
         for batch_idx in range(batch_size):
 
-            #Prediction for current image
+            #Prediction for current Image
             pred_logits = class_logits[
                 batch_idx
             ]
@@ -58,16 +61,16 @@ class HungarianMatcher(nn.Module):
                 batch_idx
             ]["boxes"]
 
-            #Handle images with no objects
-            if len(target_labels) == 0:
+            #Empty Target Handling
 
-                empty_prediction_indices = torch.empty(
+            if target_labels.numel() == 0:
+                empty_pred = torch.empty(
                     0,
                     dtype=torch.int64,
                     device=pred_boxes.device
                 )
 
-                empty_target_indices = torch.empty(
+                empty_target = torch.empty(
                     0,
                     dtype=torch.int64,
                     device=pred_boxes.device
@@ -75,65 +78,88 @@ class HungarianMatcher(nn.Module):
 
                 indices.append(
                     (
-                        empty_prediction_indices,
-                        empty_target_indices
+                        empty_pred,
+                        empty_target
                     )
                 )
 
                 continue
 
-            #Classification Cost
-            pred_prob = pred_logits.softmax(
-                dim=-1
+            #Classification Cost DINO/ Focal loss style
+            pred_prob = pred_logits.sigmoid()
+            eps = 1e-8
+
+            neg_cost = (
+                (1-self.focal_alpha)
+                *
+                (pred_prob ** self.focal_gamma)
+                *
+                (-(1-pred_prob + eps).log())
             )
 
-            cost_class = -pred_prob[
-                :,
-                target_labels
-            ]
+            pos_cost = (
+                self.focal_alpha
+                *
+                ((1-pred_prob) ** self.focal_gamma)
+                *
+                (-(pred_prob + eps).log())
+            )
 
-            #L1 bounding box Cost
+            cost_class = (
+                pos_cost[:, target_labels]
+                -
+                neg_cost[:, target_labels]
+            )
+
+            #Bounding Box L1 Cost
             cost_bbox = torch.cdist(
                 pred_bbox,
                 target_boxes,
                 p=1
             )
 
-            #GIOU Cost
-            pred_boxes_xyxy = self.box_cxcywh_to_xyxy(
-                pred_bbox
+            #Generalized IOU Cost
+            pred_boxes_xyxy = (
+                self.box_cxcywh_to_xyxy(
+                    pred_bbox
+                )
             )
 
-            target_boxes_xyxy = self.box_cxcywh_to_xyxy(
-                target_boxes
+            target_boxes_xyxy = (
+                self.box_cxcywh_to_xyxy(
+                    target_boxes
+                )
             )
 
             cost_giou = -generalized_box_iou(
                 pred_boxes_xyxy,
                 target_boxes_xyxy
+
             )
 
             #Final Matching Cost
             cost_matrix = (
-                self.cost_class * cost_class
-                +
-                self.cost_bbox * cost_bbox
-                +
-                self.cost_giou * cost_giou
+                self.cost_class
+                * cost_class
+
+                + self.cost_bbox
+                * cost_bbox
+
+                + self.cost_giou
+                *cost_giou
             )
 
-            #Hungarian Matching
-
+            #Hungarian Algorithm
             cost_matrix = cost_matrix.cpu()
 
-            prediction_indices, target_indices = (
+            pred_indices, target_indices = (
                 linear_sum_assignment(
                     cost_matrix
                 )
             )
 
-            prediction_indices = torch.as_tensor(
-                prediction_indices,
+            pred_indices = torch.as_tensor(
+                pred_indices,
                 dtype=torch.int64,
                 device=pred_boxes.device
             )
@@ -146,12 +172,12 @@ class HungarianMatcher(nn.Module):
 
             indices.append(
                 (
-                    prediction_indices,
+                    pred_indices,
                     target_indices
                 )
             )
-
         return indices
+
 
     @staticmethod
     def box_cxcywh_to_xyxy(
@@ -168,12 +194,12 @@ class HungarianMatcher(nn.Module):
         y2 = cy + 0.5 * h
 
         return torch.stack(
-            [
+            (
                 x1,
                 y1,
                 x2,
                 y2
-            ],
+            ),
             dim=-1
         )
 
