@@ -120,7 +120,8 @@ class DeformableDecoderLayer(nn.Module):
                 reference_boxes,
                 memory,
                 spatial_shapes,
-                level_start_index):
+                level_start_index,
+                attn_mask=None):
 
         #Self Attention
         query_pos = self.reference_point_embedding(
@@ -129,7 +130,8 @@ class DeformableDecoderLayer(nn.Module):
 
         self.attn_output = self.self_attn(
             query=query,
-            query_pos=query_pos
+            query_pos=query_pos,
+            attn_mask=attn_mask
         )
 
         query = query + self.dropout1(
@@ -225,12 +227,41 @@ class DeformableDecoder(nn.Module):
                 reference_boxes,
                 memory,
                 spatial_shapes,
-                level_start_index):
+                level_start_index,
+                dn_queries=None,
+                dn_boxes=None,
+                attn_mask=None):
 
         intermediate_outputs = []
+
         intermediate_class_logits = []
         intermediate_boxes = []
 
+        intermediate_dn_class_logits = []
+        intermediate_dn_boxes = []
+
+        num_dn_queries = 0
+
+        if dn_queries is not None:
+            num_dn_queries = dn_queries.shape[1]
+
+            #[DN Queries | Matching Queries]
+            query = torch.cat(
+                [
+                    dn_queries,
+                    query
+                ],
+                dim=1
+            )
+
+            reference_boxes = torch.cat(
+                [
+                    dn_boxes,
+                    reference_boxes
+                ],
+                dim=1
+            )
+        
         #Process each decoder layer, auxiliary layer decoder
         for layer_id, layer in enumerate(self.layers):
 
@@ -240,7 +271,8 @@ class DeformableDecoder(nn.Module):
                 reference_boxes= reference_boxes,
                 memory=memory,
                 spatial_shapes=spatial_shapes,
-                level_start_index=level_start_index
+                level_start_index=level_start_index,
+                attn_mask=attn_mask
             )
 
             #Auxiliary classification prediction
@@ -258,17 +290,53 @@ class DeformableDecoder(nn.Module):
                 bbox_delta
             )
 
+            #Split the predictions inside the loop
+            if num_dn_queries > 0:
+                dn_class_logits = class_logits[
+                    :,:num_dn_queries
+                ]
+
+                dn_pred_boxes = refined_boxes[
+                    :, :num_dn_queries
+                ]
+
+                matching_class_logits = class_logits[
+                    :,num_dn_queries:
+                ]
+
+                matching_pred_boxes = refined_boxes[
+                    :,num_dn_queries:
+                ]
+            else:
+                matching_class_logits = class_logits
+                matching_pred_boxes = refined_boxes
+
             #Store decoder features
-            intermediate_boxes.append(refined_boxes)
+            intermediate_boxes.append(matching_pred_boxes)
             intermediate_outputs.append(query)
-            intermediate_class_logits.append(class_logits)
+            intermediate_class_logits.append(matching_class_logits)
+
+            #Store DN outputs seperately
+            if num_dn_queries > 0:
+
+                intermediate_dn_class_logits.append(
+                    dn_class_logits
+                )
+
+                intermediate_dn_boxes.append(
+                    dn_pred_boxes
+                )
 
             reference_boxes = refined_boxes.detach()
+
+       
 
         return(
             intermediate_outputs,
             intermediate_class_logits,
-            intermediate_boxes
+            intermediate_boxes,
+            intermediate_dn_class_logits,
+            intermediate_dn_boxes
         )
 
 #Decoder Test
@@ -327,7 +395,7 @@ reference_boxes = torch.rand(
     4
 )
 
-output, class_logits, box_outputs = decoder(
+output, class_logits, box_outputs, dn_class_logits, dn_boxes = decoder(
         query,
         reference_boxes,
         memory,
@@ -338,6 +406,8 @@ output, class_logits, box_outputs = decoder(
 print(len(output))
 print(len(class_logits))
 print(len(box_outputs))
+print(len(dn_class_logits))
+print(len(dn_boxes))
 
 for i in range(NUM_LAYERS):
 

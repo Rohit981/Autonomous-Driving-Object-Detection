@@ -468,7 +468,6 @@ print("auxiliary_loss:", auxiliary_loss)
 for layer_id, aux_loss in enumerate(
     losses["auxiliary_losses"]
 ):
-
     print(
         f"\nAuxiliary Layer {layer_id}"
     )
