@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
+from attention_mask import build_attention_mask
 
 class ContrastiveDenoising(nn.Module):
     def __init__(self,
                  num_classes,
                  hidden_dim=256,
                  num_dn_groups=5,
+                 num_queries=300,
                  label_noise_ratio=0.5,
                  box_noise_scale=0.4):
         super().__init__()
@@ -16,6 +18,9 @@ class ContrastiveDenoising(nn.Module):
         self.num_dn_groups = num_dn_groups
         self.label_noise_ratio = label_noise_ratio
         self.box_noise_scale = box_noise_scale
+
+        self.num_dn_groups = num_dn_groups
+        self.num_queries = num_queries
 
         #Label embedding used to create
         #denoising content queries
@@ -471,6 +476,15 @@ class ContrastiveDenoising(nn.Module):
             dn_boxes_list
         )
 
+        num_dn_queries = dn_queries.shape[1]
+
+        #Build decoder self-attention mask
+        attn_mask = build_attention_mask(
+            num_dn_queries=num_dn_queries,
+            device=device,
+            num_queries=self.num_queries
+        )
+
         dn_meta = {
             "num_dn_groups":
                 self.num_dn_groups,
@@ -486,7 +500,7 @@ class ContrastiveDenoising(nn.Module):
         return {
             "dn_queries": dn_queries,
             "dn_boxes": dn_boxes,
-            "attn_mask": 
+            "attn_mask": attn_mask,
             "dn_meta": dn_meta
         }
 

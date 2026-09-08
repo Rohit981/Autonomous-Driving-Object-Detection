@@ -120,7 +120,7 @@ class DINO(nn.Module):
 
             dn_queries = dn_output["dn_queries"]
             dn_boxes = dn_output["dn_boxes"]
-            # attn_mask = dn_output["attn_mask"]
+            attn_mask = dn_output["attn_mask"]
             dn_meta = dn_output["dn_meta"]
 
         #Decoder
