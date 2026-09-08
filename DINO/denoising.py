@@ -482,7 +482,8 @@ class ContrastiveDenoising(nn.Module):
         attn_mask = build_attention_mask(
             num_dn_queries=num_dn_queries,
             device=device,
-            num_queries=self.num_queries
+            num_queries=self.num_queries,
+            num_dn_groups=self.num_dn_groups
         )
 
         dn_meta = {

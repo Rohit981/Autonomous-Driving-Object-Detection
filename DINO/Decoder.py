@@ -185,6 +185,13 @@ class DeformableDecoderLayer(nn.Module):
             query
         )
 
+        print(
+            "Decoder Layer attn Mask:",
+            attn_mask.shape
+            if attn_mask is not None
+            else None
+        )
+
         return query
 
 class DeformableDecoder(nn.Module):
