@@ -78,50 +78,6 @@ class DeformableEncoderLayer(nn.Module):
 
         return src
 
-#Test
-# B = 1
-# HIDDEN_DIM = 64
-# NUM_LEVELS = 3
-# NUM_HEADS = 4
-# NUM_POINTS = 2
-
-# spatial_shapes = torch.tensor([
-#     [8,8],
-#     [4,4],
-#     [2,2]
-# ], dtype=torch.long)
-
-# total_tokens = (
-#     8 * 8 +
-#     4 * 4 +
-#     2 * 2
-# )
-
-# level_start_index = torch.tensor([
-#     0,
-#     64,
-#     80
-# ], dtype=torch.long)
-
-# src = torch.randn(
-#     B,
-#     total_tokens,
-#     HIDDEN_DIM
-# )
-
-# pos = torch.randn(
-#     B,
-#     total_tokens,
-#     HIDDEN_DIM
-# )
-
-# reference_points = get_reference_points(
-#     spatial_shapes=spatial_shapes,
-#     batch_size=B,
-#     device= src.device
-# )
-
-
 
 #Deformable Encoder as it stack multiple encoder layers
 class DeformableEncoder(nn.Module):

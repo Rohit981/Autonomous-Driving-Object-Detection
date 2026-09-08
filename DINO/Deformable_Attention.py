@@ -353,7 +353,7 @@ def get_reference_points(
     reference_points = reference_points.unsqueeze(2)
 
     reference_points = reference_points.repeat(
-        batch_size,
+        1,
         1,
         spatial_shapes.shape[0],
         1

@@ -476,7 +476,7 @@ class ContrastiveDenoising(nn.Module):
                 self.num_dn_groups,
 
             "num_dn_queries":
-                dn_queries.shape[0],
+                dn_queries.shape[1],
 
             "target_indices":
                 target_indices_list
@@ -486,48 +486,49 @@ class ContrastiveDenoising(nn.Module):
         return {
             "dn_queries": dn_queries,
             "dn_boxes": dn_boxes,
+            "attn_mask": 
             "dn_meta": dn_meta
         }
 
 #Test
-NUM_CLASSES = 10
-DEVICE = "cuda"
-targets = [
-    {
-        "labels": torch.tensor(
-            [1,3,5]
-        ),
-        "boxes": torch.rand(
-            3,
-            4
-        )
-    },
-    {
-        "labels": torch.tensor(
-            [2,4]
-        ),
+# NUM_CLASSES = 10
+# DEVICE = "cuda"
+# targets = [
+#     {
+#         "labels": torch.tensor(
+#             [1,3,5]
+#         ),
+#         "boxes": torch.rand(
+#             3,
+#             4
+#         )
+#     },
+#     {
+#         "labels": torch.tensor(
+#             [2,4]
+#         ),
 
-        "boxes": torch.rand(
-            2,
-            4
-        )
-    }
-]
+#         "boxes": torch.rand(
+#             2,
+#             4
+#         )
+#     }
+# ]
 
-denoising = ContrastiveDenoising(
-    NUM_CLASSES
-).to(DEVICE)
+# denoising = ContrastiveDenoising(
+#     NUM_CLASSES
+# ).to(DEVICE)
 
-denoise = denoising(
-    targets,
-    DEVICE
-)
+# denoise = denoising(
+#     targets,
+#     DEVICE
+# )
 
-dn_queries = denoise["dn_queries"]
-dn_boxes = denoise["dn_boxes"]
-dn_meta = denoise["dn_meta"]
+# dn_queries = denoise["dn_queries"]
+# dn_boxes = denoise["dn_boxes"]
+# dn_meta = denoise["dn_meta"]
 
-print("dn_queries:", dn_queries)
-print("dn_boxes:", dn_boxes)
-print("dn_meta:", dn_meta)
+# print("dn_queries:", dn_queries)
+# print("dn_boxes:", dn_boxes)
+# print("dn_meta:", dn_meta)
 

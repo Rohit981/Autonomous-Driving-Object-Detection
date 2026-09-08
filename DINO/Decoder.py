@@ -196,6 +196,7 @@ class DeformableDecoder(nn.Module):
         super().__init__()
 
         self.num_layers = num_layers
+        self.decoder_layer = decoder_layer
 
         #Decoder Layers
         self.layers = nn.ModuleList([
@@ -231,6 +232,8 @@ class DeformableDecoder(nn.Module):
                 dn_queries=None,
                 dn_boxes=None,
                 attn_mask=None):
+
+        self.decoder_layer = DeformableDecoderLayer()
 
         intermediate_outputs = []
 
@@ -340,90 +343,90 @@ class DeformableDecoder(nn.Module):
         )
 
 #Decoder Test
-B = 1
-NUM_QUERIES = 10
-HIDDEN_DIM = 64
-NUM_LAYERS = 3
-NUM_CLASSES = 10
-NUM_HEADS = 4
-NUM_LEVELS = 3
-NUM_POINTS = 2
-TOTAL_TOKENS = 84
+# B = 1
+# NUM_QUERIES = 10
+# HIDDEN_DIM = 64
+# NUM_LAYERS = 3
+# NUM_CLASSES = 10
+# NUM_HEADS = 4
+# NUM_LEVELS = 3
+# NUM_POINTS = 2
+# TOTAL_TOKENS = 84
 
-decoder_layer = DeformableDecoderLayer(
-    hidden_dim=HIDDEN_DIM,
-    num_heads=NUM_HEADS,
-    num_levels=NUM_LEVELS,
-    num_points=NUM_POINTS
-)
+# decoder_layer = DeformableDecoderLayer(
+#     hidden_dim=HIDDEN_DIM,
+#     num_heads=NUM_HEADS,
+#     num_levels=NUM_LEVELS,
+#     num_points=NUM_POINTS
+# )
 
-decoder = DeformableDecoder(
-    decoder_layer=decoder_layer,
-    num_layers=NUM_LAYERS,
-    hidden_dim=HIDDEN_DIM,
-    num_classes=NUM_CLASSES
-)
+# decoder = DeformableDecoder(
+#     decoder_layer=decoder_layer,
+#     num_layers=NUM_LAYERS,
+#     hidden_dim=HIDDEN_DIM,
+#     num_classes=NUM_CLASSES
+# )
 
-query = torch.randn(
-    B,
-    NUM_QUERIES,
-    HIDDEN_DIM
-)
+# query = torch.randn(
+#     B,
+#     NUM_QUERIES,
+#     HIDDEN_DIM
+# )
 
 
-memory = torch.randn(
-    B,
-    TOTAL_TOKENS,
-    HIDDEN_DIM
-)
+# memory = torch.randn(
+#     B,
+#     TOTAL_TOKENS,
+#     HIDDEN_DIM
+# )
 
-spatial_shapes = torch.tensor([
-    [8, 8],
-    [4, 4],
-    [2, 2]
-], dtype=torch.long)
+# spatial_shapes = torch.tensor([
+#     [8, 8],
+#     [4, 4],
+#     [2, 2]
+# ], dtype=torch.long)
 
-level_start_index = torch.tensor([
-    0,
-    64,
-    80
-], dtype=torch.long)
+# level_start_index = torch.tensor([
+#     0,
+#     64,
+#     80
+# ], dtype=torch.long)
 
-reference_boxes = torch.rand(
-    B,
-    NUM_QUERIES,
-    4
-)
+# reference_boxes = torch.rand(
+#     B,
+#     NUM_QUERIES,
+#     4
+# )
 
-output, class_logits, box_outputs, dn_class_logits, dn_boxes = decoder(
-        query,
-        reference_boxes,
-        memory,
-        spatial_shapes,
-        level_start_index
-)
+# output, class_logits, box_outputs, dn_class_logits, dn_boxes = decoder(
+#         query,
+#         reference_boxes,
+#         memory,
+#         spatial_shapes,
+#         level_start_index
+# )
 
-print(len(output))
-print(len(class_logits))
-print(len(box_outputs))
-print(len(dn_class_logits))
-print(len(dn_boxes))
+# print(len(output))
+# print(len(class_logits))
+# print(len(box_outputs))
+# print(len(dn_class_logits))
+# print(len(dn_boxes))
 
-for i in range(NUM_LAYERS):
+# for i in range(NUM_LAYERS):
 
-    print(f"\nLayer {i+1}")
+#     print(f"\nLayer {i+1}")
 
-    print(
-        "Decoder Output:",
-        output[i].shape
-    )
+#     print(
+#         "Decoder Output:",
+#         output[i].shape
+#     )
 
-    print(
-        "Class Logits:",
-        class_logits[i].shape
-    )
+#     print(
+#         "Class Logits:",
+#         class_logits[i].shape
+#     )
 
-    print(
-        "Box Output:",
-        box_outputs[i].shape
-    )
+#     print(
+#         "Box Output:",
+#         box_outputs[i].shape
+#     )

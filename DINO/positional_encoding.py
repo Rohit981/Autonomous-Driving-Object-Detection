@@ -76,16 +76,16 @@ class PositionEmbeddingSine(nn.Module):
 
         pos_x = torch.stack(
             (
-                pos_x[:,:,:, 0:2].sin(),
-                pos_x[:,:,:,1:2].cos()
+                pos_x[:,:,:, 0::2].sin(),
+                pos_x[:,:,:,1::2].cos()
             ),
             dim=4
         ).flatten(3)
 
         pos_y = torch.stack(
             (
-                pos_y[:,:,:,0:2].sin(),
-                pos_y[:,:,:,1:2].cos()
+                pos_y[:,:,:,0::2].sin(),
+                pos_y[:,:,:,1::2].cos()
             ),
             dim=4
         ).flatten(3)

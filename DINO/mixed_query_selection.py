@@ -96,28 +96,28 @@ class MixedQuerySelection(nn.Module):
         )
     
 #Test
-B=2
-TOTAL_TOKENS=84
-HIDDEN_DIM=64
-NUM_CLASSES=10
-NUM_QUERIES=10
+# B=2
+# TOTAL_TOKENS=84
+# HIDDEN_DIM=64
+# NUM_CLASSES=10
+# NUM_QUERIES=10
 
-memory = torch.randn(
-    B,
-    TOTAL_TOKENS,
-    HIDDEN_DIM
-)
+# memory = torch.randn(
+#     B,
+#     TOTAL_TOKENS,
+#     HIDDEN_DIM
+# )
 
-model = MixedQuerySelection(
-    hidden_dims=HIDDEN_DIM,
-    num_classes=NUM_CLASSES,
-    num_queries=NUM_QUERIES
-)
+# model = MixedQuerySelection(
+#     hidden_dims=HIDDEN_DIM,
+#     num_classes=NUM_CLASSES,
+#     num_queries=NUM_QUERIES
+# )
 
-target, reference_boxes,topk_indices = model(
-    memory
-)
+# target, reference_boxes,topk_indices = model(
+#     memory
+# )
 
-print("Target:", target.shape)
-print("Reference Boxes:", reference_boxes.shape)
-print("TOPK Indices:", topk_indices.shape)
+# print("Target:", target.shape)
+# print("Reference Boxes:", reference_boxes.shape)
+# print("TOPK Indices:", topk_indices.shape)

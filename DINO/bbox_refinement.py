@@ -50,30 +50,30 @@ class BBoxRefinement(nn.Module):
         return updated_boxes
 
 #Test
-B = 1
-NUM_QUERIES = 10
+# B = 1
+# NUM_QUERIES = 10
 
-reference_boxes = torch.rand(
-    B,
-    NUM_QUERIES,
-    4
-)
+# reference_boxes = torch.rand(
+#     B,
+#     NUM_QUERIES,
+#     4
+# )
 
-bbox_delta = torch.randn(
-    B,
-    NUM_QUERIES,
-    4
-)
+# bbox_delta = torch.randn(
+#     B,
+#     NUM_QUERIES,
+#     4
+# )
 
-refinement = BBoxRefinement()
+# refinement = BBoxRefinement()
 
-updated_boxes = refinement(
-    reference_boxes,
-    bbox_delta
-)
+# updated_boxes = refinement(
+#     reference_boxes,
+#     bbox_delta
+# )
 
-print("Updated Boxes Shape:", updated_boxes.shape)
-print("Updated Boxes min:", updated_boxes.min())
-print("Updated Boxes max:", updated_boxes.max())
+# print("Updated Boxes Shape:", updated_boxes.shape)
+# print("Updated Boxes min:", updated_boxes.min())
+# print("Updated Boxes max:", updated_boxes.max())
 
 
