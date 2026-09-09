@@ -24,6 +24,6 @@ class DATA_CONFIG:
 
     device : torch.cuda = "cuda" if torch.cuda.is_available() else "cpu"
     learning_rate: float = 1e-4
-    n_epochs : int = 50
-    batch_size: int = 128
+    n_epochs : int = 100
+    batch_size: int = 1
     num_workers: int = 0

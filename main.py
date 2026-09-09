@@ -2,11 +2,12 @@ from ultralytics import YOLO
 import os
 import Config
 import Dataset as dataset
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader,Subset
 import transform
 from DINO import loss,model
 from DINO.matcher import HungarianMatcher
 from Trainer import ModelTrainer
+from Utils import Visualize_loss_acc
 
 def main():
     # model = YOLO('yolo11n.pt')
@@ -44,9 +45,19 @@ def main():
         transform=val_transform
     )
 
+    train_subset = Subset(
+        train_dataset,
+        range(50)
+    )
+
+    val_subset = Subset(
+        val_dataset,
+        range(25)
+    )
+
     #Train DataLoader
     train_dataloader = DataLoader(
-        train_dataset,
+        train_subset,
         batch_size=config.batch_size,
         shuffle=True,
         num_workers=config.num_workers,
@@ -55,7 +66,7 @@ def main():
     )
 
     val_dataloader = DataLoader(
-        val_dataset,
+        val_subset,
         batch_size=config.batch_size,
         shuffle=False,
         num_workers=config.num_workers,
@@ -82,21 +93,54 @@ def main():
         learning_rate=config.learning_rate
     )
 
-    images, targets = next(iter(train_dataloader))
+    # images, targets = next(iter(train_dataloader))
 
-    print("Images:", images.shape)
+    # images = images.to(config.device)
 
-    for i, target in enumerate(targets):
-        print(f"\nImage {i}")
-        print("Labels:", target["labels"].shape)
-        print("Boxes:", target["boxes"].shape)
-        print("Label values:", target["labels"])
+    # targets = trainer.move_targets_to_device(targets)
 
-    # trainer.fit(
-    #     train_loader=train_dataloader,
-    #     val_loader=val_dataloader,
-    #     num_epochs=config.n_epochs
+    # trainer.model.train()
+
+    # trainer.optimizer.zero_grad(
+    #     set_to_none=None
     # )
+   
+    # outputs = trainer.model(
+    #     images,
+    #     targets
+    # )
+
+    # print("Forward successful")
+
+    # losses = trainer.criterion(
+    #     class_logits=outputs["pred_logits"],
+    #     pred_boxes=outputs["pred_boxes"],
+    #     targets=targets,
+
+    #     auxiliary_class_logits=outputs["aux_class_logits"],
+    #     auxiliary_boxes=outputs["aux_boxes"],
+
+    #     dn_class_logits=outputs["dn_class_logits"],
+    #     dn_boxes=outputs["dn_boxes"],
+    #     dn_meta=outputs["dn_meta"]
+    # )
+
+    # loss_value = losses['loss_total']
+    # print("Loss:", loss_value.item())
+    # loss_value.backward()
+    # print("BackPropogation successful")
+    # trainer.optimizer.step()
+    # print("Optimizer step successful")
+
+    trainer.fit(
+        train_loader=train_dataloader,
+        val_loader=val_dataloader,
+        num_epochs=config.n_epochs
+    )
+
+    Visualize_loss_acc(train_loss=trainer.train_loss,
+                       val_loss=trainer.val_loss)
+
 
 if __name__ == "__main__":
     main()

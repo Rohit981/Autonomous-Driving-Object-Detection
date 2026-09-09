@@ -52,7 +52,7 @@ class BDD100kDataset(Dataset):
 
 
         #Load XML annotation
-        label_name = os.path.splitext(image_name)[0] + '.txt'
+        label_name = (os.path.splitext(image_name)[0] + '.txt')
         label_path = os.path.join(
                 self.labels_dir,
                 label_name
@@ -67,49 +67,113 @@ class BDD100kDataset(Dataset):
             with open(label_path, "r") as f:
                     for line in f:
                         parts = line.strip().split()
-                        if len(parts) == 5:
-                             cls_id = int(parts[0])
+                        if len(parts) != 5:
+                             continue
+                        
+                        cls_id = int(parts[0])
 
-                             #YOLO format: normalized [x_center, y_center, width, height]
-                             x_c, y_c, w,h = map(float, parts[1:])
+                        #YOLO format: normalized [x_center, y_center, width, height]
+                        x_c, y_c, w,h = map(float, parts[1:])
 
-                             #Convert to absolute [x1, y1, x2, y2] for DINO/RT-DETR
-                             x1 = (x_c - w/2) * origin_w
-                             y1 = (y_c - h/2) * origin_h
-                             x2 = (x_c + w/2) * origin_w
-                             y2 = (y_c + h/2) * origin_h
+                        #Convert to absolute [x1, y1, x2, y2] for DINO/RT-DETR
+                        x1 = (x_c - w/2) * origin_w
+                        y1 = (y_c - h/2) * origin_h
+                        x2 = (x_c + w/2) * origin_w
+                        y2 = (y_c + h/2) * origin_h
 
-                             boxes.append([x1,y1,x2,y2])
-                             labels.append(cls_id)
+                        #Clamp coordinates to valid image boundaries
+                        x1 = max(0.0, min(x1,float(origin_w)))
+                        y1 = max(0.0, min(y1,float(origin_h)))
+
+                        x2 = max(0.0, min(x2,float(origin_w)))
+                        y2 = max(0.0, min(y2,float(origin_h)))
+
+                        #Skip ivalid boxes
+                        if x2 <= x1 or y2 <= y1:
+                            continue
+
+                        boxes.append([x1,y1,x2,y2])
+                        labels.append(cls_id)
 
         #Handle empty images (no bounding boxes)
-        if len(boxes) == 0:
-             boxes = torch.zeros((0,4), dtype=torch.float32)
-             labels = torch.zeros((0,), dtype=torch.int64)
-        else:
-             boxes = torch.tensor(boxes, dtype=torch.float32)
-             labels = torch.tensor(labels, dtype=torch.int64)
+        # if len(boxes) == 0:
+        #      boxes = torch.zeros((0,4), dtype=torch.float32)
+        #      labels = torch.zeros((0,), dtype=torch.int64)
+        # else:
+        #      boxes = torch.tensor(boxes, dtype=torch.float32)
+        #      labels = torch.tensor(labels, dtype=torch.int64)
 
-        #Create target dictionary structure
-        target = {
-             "boxes": boxes,
-             "labels": labels,
-             "image_id": torch.tensor(index),
-             "orig_size": torch.tensor([origin_h,origin_w]),
-             "size": torch.tensor([origin_h,origin_w])
-        }
+        # #Create target dictionary structure
+        # target = {
+        #      "boxes": boxes,
+        #      "labels": labels,
+        #      "image_id": torch.tensor(index),
+        #      "orig_size": torch.tensor([origin_h,origin_w]),
+        #      "size": torch.tensor([origin_h,origin_w])
+        # }
 
         #Apply transform Albumentation
         if self.transform:
              #Albumentation
             augmented = self.transform(image=image, 
-                                        bboxes = boxes.tolist(), 
-                                        labels = labels.tolist())
+                                        bboxes = boxes, 
+                                        labels = labels)
             image = augmented["image"]
             #Convert them to tensors
-            target["boxes"] = torch.tensor(augmented["bboxes"], dtype=torch.float32)
-            target["labels"] = torch.tensor(augmented["labels"], dtype=torch.int64)
-                                        
+            augmented_boxes = augmented["bboxes"]
+            augmented_labels = augmented["labels"]
+
+        else:
+            augmented_boxes = boxes
+            augmented_labels = labels
+
+            image = torch.from_numpy(
+                image
+            ).permute(
+                2,0,1
+            ).float() / 255.0
+
+        #Convert to tensors
+        if len(augmented_boxes) > 0:
+
+            boxes_tensor = torch.tensor(
+                augmented_boxes,
+                dtype=torch.float32
+            ).reshape(-1,4)
+
+            labels_tensor = torch.tensor(
+                 augmented_labels,
+                 dtype=torch.int64
+            )
+
+        else:
+            boxes_tensor = torch.zeros(
+                (0,4),
+                dtype=torch.float32
+            )
+
+            labels_tensor = torch.zeros(
+                 (0,),
+                 dtype=torch.int64
+            )
+
+        #Get transformed size
+        _,new_h,new_w = image.shape
+
+        target = {
+            "boxes":boxes_tensor,
+            "labels": labels_tensor,
+            "image_id": torch.tensor(
+                index
+            ),
+            "orig_size": torch.tensor(
+                 [origin_h,origin_w]
+            ),
+            "size": torch.tensor(
+                 [new_h,new_w]
+            )
+        }
+                                
         return image, target
 
 #RT DETR like models can't accept batch images of varying dimensions so we intilaize a collate function

@@ -106,9 +106,9 @@ class MultiScaleDeformableAttention(nn.Module):
             :, [1,0]
         ]
 
-        print("reference_points:", reference_points.shape)
-        print("sampling_offsets:", sampling_offsets.shape)
-        print("normalizer:", normalizer.shape)
+        # print("reference_points:", reference_points.shape)
+        # print("sampling_offsets:", sampling_offsets.shape)
+        # print("normalizer:", normalizer.shape)
 
 
         if reference_points.shape[-1] == 2:
@@ -122,7 +122,7 @@ class MultiScaleDeformableAttention(nn.Module):
                 ]
             )
 
-            print("Reference point shape is 2")
+            # print("Reference point shape is 2")
 
         elif reference_points.shape[-1] == 4:
 
@@ -146,7 +146,7 @@ class MultiScaleDeformableAttention(nn.Module):
             /self.num_points
             )
 
-            print("Reference point shape is 4")
+            # print("Reference point shape is 4")
 
         else:
             raise ValueError(
@@ -154,7 +154,7 @@ class MultiScaleDeformableAttention(nn.Module):
                 "last dimension of 2 or 4"
             )
 
-        print("sampling_location:", sampling_locations.shape)
+        # print("sampling_location:", sampling_locations.shape)
         
 
         #Sample Feature Maps

@@ -167,78 +167,78 @@ class DINO(nn.Module):
         }
 
 #Test
-NUM_CLASSES = 10
-B = 2
-C = 3
-H = 256
-W = 256
+# NUM_CLASSES = 10
+# B = 2
+# C = 3
+# H = 256
+# W = 256
 
-images = torch.randn(
-    B,
-    C,
-    H,
-    W
-)
+# images = torch.randn(
+#     B,
+#     C,
+#     H,
+#     W
+# )
 
-targets = [
-    {
-        "labels": torch.tensor(
-            [1,3,5]
-        ),
-        "boxes": torch.rand(
-            3,
-            4
-        )
-    },
-    {
-        "labels": torch.tensor(
-            [2,4]
-        ),
+# targets = [
+#     {
+#         "labels": torch.tensor(
+#             [1,3,5]
+#         ),
+#         "boxes": torch.rand(
+#             3,
+#             4
+#         )
+#     },
+#     {
+#         "labels": torch.tensor(
+#             [2,4]
+#         ),
 
-        "boxes": torch.rand(
-            2,
-            4
-        )
-    }
-]
+#         "boxes": torch.rand(
+#             2,
+#             4
+#         )
+#     }
+# ]
 
-model = DINO(
-    num_classes=NUM_CLASSES
-)
+# model = DINO(
+#     num_classes=NUM_CLASSES
+# )
 
-outputs = model(
-    images,
-    targets
-)
+# outputs = model(
+#     images,
+#     targets
+# )
 
-print("Model training:", model.training)
+# print("Model training:", model.training)
 
-print(
-    "Pred logits:",
-    outputs["pred_logits"].shape
-)
+# print(
+#     "Pred logits:",
+#     outputs["pred_logits"].shape
+# )
 
-print(
-    "Pred boxes:",
-    outputs["pred_boxes"].shape
-)
+# print(
+#     "Pred boxes:",
+#     outputs["pred_boxes"].shape
+# )
 
-print(
-    "Aux logits:",
-    len(outputs["aux_class_logits"])
-)
+# print(
+#     "Aux logits:",
+#     len(outputs["aux_class_logits"])
+# )
 
-print(
-    "Aux boxes:",
-    len(outputs["aux_boxes"])
-)
+# print(
+#     "Aux boxes:",
+#     len(outputs["aux_boxes"])
+# )
 
-print(
-    "DN logits:",
-    len(outputs["dn_class_logits"])
-)
+# print(
+#     "DN logits:",
+#     len(outputs["dn_class_logits"])
+# )
 
-print(
-    "DN boxes:",
-    len(outputs["dn_boxes"])
-)
+# print(
+#     "DN boxes:",
+#     len(outputs["dn_boxes"])
+# )

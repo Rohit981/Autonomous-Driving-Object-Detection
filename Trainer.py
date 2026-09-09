@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm, trange
+import time
 
 
 class ModelTrainer(nn.Module):
@@ -24,6 +25,9 @@ class ModelTrainer(nn.Module):
         self.learning_rate = learning_rate
 
         self.start_epoch = 0
+
+        self.train_loss = []
+        self.val_loss = []
 
         self.set_optimizer()
         self.set_lr_scheduler()
@@ -85,10 +89,18 @@ class ModelTrainer(nn.Module):
 
         num_batches = len(train_loader)
 
+        train_pbar = tqdm(
+            train_loader,
+            desc="Trainig",
+            leave=True
+        )
+
         for batch_idx, (
             images,
             targets
-        ) in enumerate(tqdm(train_loader, leave=False, desc="Training")):
+        ) in enumerate(train_pbar):
+
+            start = time.time()
 
             #Move images to device
             images = images.to(self.device)
@@ -99,11 +111,16 @@ class ModelTrainer(nn.Module):
             #Clear gradient
             self.optimizer.zero_grad()
 
+            torch.cuda.synchronize()
+           
             #Forward Pass
             outputs = self.model(
                 images,
                 targets
             )
+
+          
+            loss_start = time.time()
 
             losses = self.criterion(
                 class_logits = 
@@ -143,9 +160,12 @@ class ModelTrainer(nn.Module):
                 self.model.parameters(),
                 max_norm=0.1
             )
-
             #Update parameters
             self.optimizer.step()
+
+            torch.cuda.synchronize()
+            print(" Total batch:",
+                  time.time() - start)
 
             #Store losses
             total_loss += loss.item()
@@ -195,7 +215,13 @@ class ModelTrainer(nn.Module):
 
         total_loss = 0.0
 
-        for images,targets in tqdm(val_loader, leave=False, desc="Validation"):
+        val_pbar = tqdm(
+            val_loader,
+            desc="Validation",
+            leave=True
+        )
+
+        for images,targets in val_pbar:
             images = images.to(self.device)
 
             targets = self.move_targets_to_device(targets)
@@ -232,7 +258,7 @@ class ModelTrainer(nn.Module):
             num_epochs
     ):
         history = []
-        pbar = trange(self.start_epoch,num_epochs,leave=False,desc="Epoch")
+        pbar = trange(self.start_epoch,num_epochs,leave=True,desc="Epoch")
 
         for epoch in pbar:
 
@@ -252,6 +278,8 @@ class ModelTrainer(nn.Module):
             if self.scheduler is not None:
                 self.scheduler.step()
 
+            self.train_loss.append(train_metrics["loss"])
+            self.val_loss.append(val_loss)
             print(
                 f"Train Loss: "
                 f"{train_metrics['loss']:.4f}"

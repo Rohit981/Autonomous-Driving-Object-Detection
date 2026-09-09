@@ -85,6 +85,7 @@ def get_train_transforms():
             #Remove boxes that become too small
             min_area=1.0,
             min_visibility=0.1,
+            clip=True
         ),   
     )
 
@@ -116,6 +117,7 @@ def get_val_transforms():
             format="pascal_voc",
             label_fields=["labels"],
             min_area=1.0,
-            min_visibility=0.1
+            min_visibility=0.1,
+            clip=True
         )
     )
