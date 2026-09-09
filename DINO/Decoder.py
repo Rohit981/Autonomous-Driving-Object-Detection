@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import copy
 
-from Deformable_Attention import MultiScaleDeformableAttention, get_reference_points
-from reference_embedding import ReferencePointEmbedding
-from prediction_heads import ClassificationHead, BoundingBoxHead
-from bbox_refinement import BBoxRefinement
+from .Deformable_Attention import MultiScaleDeformableAttention, get_reference_points
+from .reference_embedding import ReferencePointEmbedding
+from .prediction_heads import ClassificationHead, BoundingBoxHead
+from .bbox_refinement import BBoxRefinement
 
 class DecoderSelfAttention(nn.Module):
     def __init__(self,

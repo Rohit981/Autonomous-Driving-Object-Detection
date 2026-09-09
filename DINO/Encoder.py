@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from Deformable_Attention import MultiScaleDeformableAttention,get_reference_points
+from .Deformable_Attention import MultiScaleDeformableAttention,get_reference_points
 
 class DeformableEncoderLayer(nn.Module):
     def __init__(self,

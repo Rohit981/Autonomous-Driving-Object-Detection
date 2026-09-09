@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torchvision.ops import generalized_box_iou
-from matcher import HungarianMatcher
+from .matcher import HungarianMatcher
 
 class DINOLoss(nn.Module):
     def __init__(self,

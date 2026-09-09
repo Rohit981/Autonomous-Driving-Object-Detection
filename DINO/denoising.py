@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from attention_mask import build_attention_mask
+from .attention_mask import build_attention_mask
 
 class ContrastiveDenoising(nn.Module):
     def __init__(self,

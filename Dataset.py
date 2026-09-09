@@ -103,8 +103,8 @@ class BDD100kDataset(Dataset):
         if self.transform:
              #Albumentation
             augmented = self.transform(image=image, 
-                                        bboxes = target["boxes"], 
-                                        labels = target["labels"])
+                                        bboxes = boxes.tolist(), 
+                                        labels = labels.tolist())
             image = augmented["image"]
             #Convert them to tensors
             target["boxes"] = torch.tensor(augmented["bboxes"], dtype=torch.float32)
@@ -112,13 +112,13 @@ class BDD100kDataset(Dataset):
                                         
         return image, target
 
-    #RT DETR like models can't accept batch images of varying dimensions so we intilaize a collate function
-    def collate_fn(batch):
-        images = [item[0] for item in batch]
-        targets = [item[1] for item in batch]
+#RT DETR like models can't accept batch images of varying dimensions so we intilaize a collate function
+def collate_fn(batch):
+    images = [item[0] for item in batch]
+    targets = [item[1] for item in batch]
 
-        #Pad images or stack if transforms already resized them to static dims
-        images = torch.stack(images,dim=0)
-        return images,targets
-        
+    #Pad images or stack if transforms already resized them to static dims
+    images = torch.stack(images,dim=0)
+    return images,targets
+    
             

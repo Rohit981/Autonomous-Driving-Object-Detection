@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from positional_encoding import PositionEmbeddingSine
+from .positional_encoding import PositionEmbeddingSine
 
 class MultiScaleFeatureFlatten(nn.Module):
     def __init__(self,

@@ -1,73 +1,69 @@
 import torch
 import torch.nn as nn
 
-# Common Convolution Backbone
-class ConvBlock(nn.Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size=3,
-                 stride=2,
-                 padding=1):
-        super().__init__()
-
-        self.block = nn.Sequential(
-            nn.Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=kernel_size,
-                stride=stride,
-                padding=padding,
-                bias=False
-            ),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self,x):
-        return self.block(x)
+from torchvision.models import(
+    resnet50,
+    ResNet50_Weights
+)
 
 #DINO Backbone
 class DINOBackbone(nn.Module):
     def __init__(self, 
-                 in_channels=3):
+                 pretrained=True):
         super().__init__()
 
-        self.stage1 = nn.Sequential(
-            ConvBlock(in_channels,64),
-            ConvBlock(64,128)
-        )
+        if pretrained:
+            weights = ResNet50_Weights.DEFAULT
 
-        self.stage2 = nn.Sequential(
-            ConvBlock(128,256)
-        )
+            backbone = resnet50(
+                weights=weights
+            )
 
-        self.stage3 = nn.Sequential(
-            ConvBlock(256,512)
-        )
+        else:
+            backbone = resnet50(
+                weights=None
+            )
 
-        self.stage4 = nn.Sequential(
-            ConvBlock(512,1024)
-        )
+        #Stem
+        self.conv1 = backbone.conv1
+        self.bn1 = backbone.bn1
+        self.relu = backbone.relu
+        self.maxpool = backbone.maxpool
+
+        #ResNet stages
+        self.layer1 = backbone.layer1
+        self.layer2 = backbone.layer2
+        self.layer3 = backbone.layer3
+        self.layer4 = backbone.layer4
 
     def forward(self,x):
-        features = []
 
-        x = self.stage1(x)
+        #Stem
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
 
-        #P3
-        x = self.stage2(x)
-        features.append(x)
+        #C2
+        x = self.layer1(x)
 
-        #P4
-        x = self.stage3(x)
-        features.append(x)
+        #C3
+        x = self.layer2(x)
+        feature_p3 = x
 
-        #P5
-        x = self.stage4(x)
-        features.append(x)
+        #C4
+        x = self.layer3(x)
+        feature_p4 = x
 
-        return features
+        #C5
+        x = self.layer4(x)
+        feature_p5 = x
+
+        return [
+            feature_p3,
+            feature_p4,
+            feature_p5
+        ]
 
 class FeatureProjection(nn.Module):
     def __init__(self,
