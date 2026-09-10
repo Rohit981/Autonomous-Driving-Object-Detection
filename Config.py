@@ -23,7 +23,7 @@ class DATA_CONFIG:
     BDD100k_val_label_dir = "Data/BDD100k/val/labels"
 
     device : torch.cuda = "cuda" if torch.cuda.is_available() else "cpu"
-    learning_rate: float = 1e-4
-    n_epochs : int = 100
+    learning_rate: float = 5e-4
+    n_epochs : int = 300
     batch_size: int = 1
     num_workers: int = 0

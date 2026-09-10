@@ -139,7 +139,13 @@ def main():
     )
 
     Visualize_loss_acc(train_loss=trainer.train_loss,
-                       val_loss=trainer.val_loss)
+                       val_loss=trainer.val_loss,
+                       train_class_loss=trainer.train_class_loss,
+                       val_class_loss=trainer.val_class_loss,
+                       train_bbox_loss=trainer.train_bbox_loss,
+                       val_bbox_loss=trainer.val_bbox_loss,
+                       train_giou_loss=trainer.train_giou_loss,
+                       val_giou_loss=trainer.val_giou_loss)
 
 
 if __name__ == "__main__":

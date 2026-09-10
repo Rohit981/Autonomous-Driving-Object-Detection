@@ -112,6 +112,8 @@ class BDD100kDataset(Dataset):
         #      "size": torch.tensor([origin_h,origin_w])
         # }
 
+       
+    
         #Apply transform Albumentation
         if self.transform:
              #Albumentation
@@ -133,6 +135,8 @@ class BDD100kDataset(Dataset):
                 2,0,1
             ).float() / 255.0
 
+         #Get transformed size
+        _,new_h,new_w = image.shape
         #Convert to tensors
         if len(augmented_boxes) > 0:
 
@@ -140,6 +144,27 @@ class BDD100kDataset(Dataset):
                 augmented_boxes,
                 dtype=torch.float32
             ).reshape(-1,4)
+
+            #Pascal VOC
+            x1 = boxes_tensor[:,0]
+            y1 = boxes_tensor[:,1]
+            x2 = boxes_tensor[:,2]
+            y2 = boxes_tensor[:,3]
+
+            #Convert to cxcywh
+            cx = (x1+x2) / 2
+            cy = (y1+y2) / 2
+            w = x2-x1
+            h = y2-y1
+
+            boxes_tensor = torch.stack(
+                 [cx,cy,w,h],
+                 dim=-1
+            )
+
+            #Normalize
+            boxes_tensor[:,[0,2]] /=new_w
+            boxes_tensor[:,[1,3]] /=new_h
 
             labels_tensor = torch.tensor(
                  augmented_labels,
@@ -157,9 +182,7 @@ class BDD100kDataset(Dataset):
                  dtype=torch.int64
             )
 
-        #Get transformed size
-        _,new_h,new_w = image.shape
-
+        
         target = {
             "boxes":boxes_tensor,
             "labels": labels_tensor,
@@ -173,7 +196,12 @@ class BDD100kDataset(Dataset):
                  [new_h,new_w]
             )
         }
-                                
+
+        if boxes_tensor.numel() > 0:
+            assert boxes_tensor.min() >= 0.0
+            assert boxes_tensor.max() <= 1.0
+
+                                        
         return image, target
 
 #RT DETR like models can't accept batch images of varying dimensions so we intilaize a collate function

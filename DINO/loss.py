@@ -183,84 +183,84 @@ class DINOLoss(nn.Module):
                 ]
             )
 
-            #Handle batch containing no objects
-            if len(src_boxes) == 0:
-                zero = torch.tensor(
-                    0.0,
-                    device=pred_boxes.device
-                )
-
-                return zero, zero
-
-            src_boxes = torch.cat(
-                src_boxes,
-                dim=0
+        #Handle batch containing no objects
+        if len(src_boxes) == 0:
+            zero = torch.tensor(
+                0.0,
+                device=pred_boxes.device
             )
 
-            target_boxes = torch.cat(
-                target_boxes,
-                dim=0
+            return zero, zero
+
+        src_boxes = torch.cat(
+            src_boxes,
+            dim=0
+        )
+
+        target_boxes = torch.cat(
+            target_boxes,
+            dim=0
+        )
+
+        #L1 Loss
+        loss_bbox = F.l1_loss(
+            src_boxes,
+            target_boxes,
+            reduction="none"
+        ).sum()
+
+        #GIOU Loss
+        src_boxes_xyxy = (
+            self.box_cxcywh_to_xyxy(
+                src_boxes
             )
+        )
 
-            #L1 Loss
-            loss_bbox = F.l1_loss(
-                src_boxes,
-                target_boxes,
-                reduction="none"
-            ).sum()
-
-            #GIOU Loss
-            src_boxes_xyxy = (
-                self.box_cxcywh_to_xyxy(
-                    src_boxes
-                )
+        target_boxes_xyxy = (
+            self.box_cxcywh_to_xyxy(
+                target_boxes
             )
+        )
 
-            target_boxes_xyxy = (
-                self.box_cxcywh_to_xyxy(
-                    target_boxes
-                )
+        general_IOU = generalized_box_iou(
+            src_boxes_xyxy,
+            target_boxes_xyxy
+        )
+
+        #Only use corresponding matched pairs
+        loss_giou = (
+            1
+            -
+            torch.diag(
+                general_IOU
             )
+        ).sum()
 
-            general_IOU = generalized_box_iou(
-                src_boxes_xyxy,
-                target_boxes_xyxy
-            )
+        num_boxes = max(
+            sum(
+                len(target["boxes"])
+                for target in targets
+            ),
+            1
+        )
 
-            #Only use corresponding matched pairs
-            loss_giou = (
-                1
-                -
-                torch.diag(
-                    general_IOU
-                )
-            ).sum()
+        loss_bbox = (
+            loss_bbox
+            /
+            num_boxes
+        )
 
-            num_boxes = max(
-                sum(
-                    len(target["boxes"])
-                    for target in targets
-                ),
-                1
-            )
+        loss_giou = (
+            loss_giou
+            /
+            num_boxes
+        )
 
-            loss_bbox = (
-                loss_bbox
-                /
-                num_boxes
-            )
-
-            loss_giou = (
-                loss_giou
-                /
-                num_boxes
-            )
-
-            return loss_bbox, loss_giou
+        return loss_bbox, loss_giou
 
     def compute_detection_loss(
             self,
-             class_logits,
+            class_logits,
             pred_boxes,
             targets
     ):
@@ -428,9 +428,12 @@ class DINOLoss(nn.Module):
             )
 
             #GIOU loss
+            pred_boxes_xyxy = self.box_cxcywh_to_xyxy(pred_boxes)
+            target_boxes_xyxy = self.box_cxcywh_to_xyxy(target_boxes)
+
             giou = generalized_box_iou(
-                pred_boxes,
-                target_boxes
+                pred_boxes_xyxy,
+                target_boxes_xyxy
             )
 
             giou_loss = (
@@ -566,6 +569,9 @@ class DINOLoss(nn.Module):
         return {
             #Total including auxiliary losses
             "loss_total": total_loss,
+
+            #Main loss total
+            "main_loss_total": main_losses["loss_total"],
 
             #Main losses
             "loss_class": main_losses["loss_class"],

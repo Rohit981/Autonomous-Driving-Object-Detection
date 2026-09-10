@@ -6,7 +6,6 @@ from .Decoder import DeformableDecoder,DeformableDecoderLayer
 from .mixed_query_selection import MixedQuerySelection
 from .feature_encoder import MultiScaleFeatureFlatten
 from .denoising import ContrastiveDenoising
-from .backbone import FeatureProjection
 from .Deformable_Attention import get_reference_points
 
 class DINO(nn.Module):
@@ -17,22 +16,22 @@ class DINO(nn.Module):
         super().__init__()
 
         self.backbone = DINOBackbone(pretrained=True)
-        self.input_proj = nn.ModuleList([
-            FeatureProjection(
-                in_channels=512,
-                hidden_dims=hidden_dim
-            ),
+        # self.input_proj = nn.ModuleList([
+        #     FeatureProjection(
+        #         in_channels=512,
+        #         hidden_dims=hidden_dim
+        #     ),
 
-            FeatureProjection(
-                in_channels=1024,
-                hidden_dims=hidden_dim
-            ),
+        #     FeatureProjection(
+        #         in_channels=1024,
+        #         hidden_dims=hidden_dim
+        #     ),
 
-            FeatureProjection(
-                in_channels=2048,
-                hidden_dims=hidden_dim
-            )
-        ])
+        #     FeatureProjection(
+        #         in_channels=2048,
+        #         hidden_dims=hidden_dim
+        #     )
+        # ])
 
         self.feature_encoder = MultiScaleFeatureFlatten(
             hidden_dim=hidden_dim
@@ -64,13 +63,13 @@ class DINO(nn.Module):
         features = self.backbone(images)
 
         #Projection feature levels
-        projected_features = [
-            proj(feature)
-            for proj, feature in zip(
-                self.input_proj,
-                features
-            )
-        ]
+        # projected_features = [
+        #     proj(feature)
+        #     for proj, feature in zip(
+        #         self.input_proj,
+        #         features
+        #     )
+        # ]
 
         #Multi-scale flattening + positional encoding
         (
@@ -79,7 +78,7 @@ class DINO(nn.Module):
             spatial_shapes,
             level_start_index
         ) = self.feature_encoder(
-            projected_features
+            features
         )
 
         # Generate encoder reference points

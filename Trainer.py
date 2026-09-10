@@ -28,6 +28,14 @@ class ModelTrainer(nn.Module):
 
         self.train_loss = []
         self.val_loss = []
+        self.train_class_loss = []
+        self.val_class_loss = []
+
+        self.train_bbox_loss = []
+        self.val_bbox_loss = []
+
+        self.train_giou_loss = []
+        self.val_giou_loss = []
 
         self.set_optimizer()
         self.set_lr_scheduler()
@@ -69,8 +77,8 @@ class ModelTrainer(nn.Module):
     def set_lr_scheduler(self):
         self.scheduler = optim.lr_scheduler.StepLR(
             optimizer=self.optimizer,
-            step_size=40,
-            gamma=0.1
+            step_size=80,
+            gamma=0.5
         )
 
     def train_epoch(
@@ -80,6 +88,8 @@ class ModelTrainer(nn.Module):
         self.model.train()
 
         total_loss = 0.0
+
+        total_main_loss = 0.0
 
         total_class_loss = 0.0
 
@@ -110,8 +120,6 @@ class ModelTrainer(nn.Module):
 
             #Clear gradient
             self.optimizer.zero_grad()
-
-            torch.cuda.synchronize()
            
             #Forward Pass
             outputs = self.model(
@@ -170,6 +178,8 @@ class ModelTrainer(nn.Module):
             #Store losses
             total_loss += loss.item()
 
+            total_main_loss += losses["main_loss_total"].item()
+
             total_class_loss += (
                 losses["loss_class"].item()
             )
@@ -190,6 +200,23 @@ class ModelTrainer(nn.Module):
                     f"[{batch_idx}/{num_batches}] |"
                     f"Loss: {loss.item(): .4f}"
                 )
+
+        self.train_loss.append(
+            total_main_loss / num_batches
+        )
+
+        self.train_class_loss.append(
+            total_class_loss / num_batches
+        )
+
+        self.train_bbox_loss.append(
+            total_bbox_loss / num_batches
+        )
+
+        self.train_giou_loss.append(
+            total_giou_loss / num_batches
+        )
+                
 
         return {
             "loss":
@@ -214,6 +241,17 @@ class ModelTrainer(nn.Module):
         self.model.eval()
 
         total_loss = 0.0
+       
+        total_main_loss = 0.0
+
+        total_class_loss = 0.0
+
+        total_bbox_loss = 0.0
+
+        total_giou_loss = 0.0
+
+        num_batches = len(val_loader)
+        
 
         val_pbar = tqdm(
             val_loader,
@@ -245,6 +283,37 @@ class ModelTrainer(nn.Module):
             total_loss += (
                 losses['loss_total'].item()
             )
+
+            total_main_loss += losses["main_loss_total"].item()
+
+            total_class_loss += (
+                losses["loss_class"].item()
+            )
+
+            total_bbox_loss += (
+                losses["loss_bbox"].item()
+            ) 
+
+            total_giou_loss += (
+                losses["loss_giou"].item()
+            )
+
+        self.val_loss.append(
+            total_main_loss / num_batches
+        )
+
+        self.val_class_loss.append(
+            total_class_loss / num_batches
+        )
+
+        self.val_bbox_loss.append(
+            total_bbox_loss / num_batches
+        )
+
+        self.val_giou_loss.append(
+            total_giou_loss / num_batches
+        )
+                    
 
         return(
             total_loss/ len(val_loader)
@@ -278,8 +347,7 @@ class ModelTrainer(nn.Module):
             if self.scheduler is not None:
                 self.scheduler.step()
 
-            self.train_loss.append(train_metrics["loss"])
-            self.val_loss.append(val_loss)
+            
             print(
                 f"Train Loss: "
                 f"{train_metrics['loss']:.4f}"
