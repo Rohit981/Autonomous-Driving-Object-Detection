@@ -7,7 +7,7 @@ import transform
 from DINO import loss,model
 from DINO.matcher import HungarianMatcher
 from Trainer import ModelTrainer
-from Utils import Visualize_loss_acc
+from Utils import Visualize_loss_acc, get_detection, inspect_top_predictions
 
 def main():
     # model = YOLO('yolo11n.pt')
@@ -93,50 +93,70 @@ def main():
         learning_rate=config.learning_rate
     )
 
-    # images, targets = next(iter(train_dataloader))
-
-    # images = images.to(config.device)
-
-    # targets = trainer.move_targets_to_device(targets)
-
-    # trainer.model.train()
-
-    # trainer.optimizer.zero_grad(
-    #     set_to_none=None
-    # )
-   
-    # outputs = trainer.model(
-    #     images,
-    #     targets
-    # )
-
-    # print("Forward successful")
-
-    # losses = trainer.criterion(
-    #     class_logits=outputs["pred_logits"],
-    #     pred_boxes=outputs["pred_boxes"],
-    #     targets=targets,
-
-    #     auxiliary_class_logits=outputs["aux_class_logits"],
-    #     auxiliary_boxes=outputs["aux_boxes"],
-
-    #     dn_class_logits=outputs["dn_class_logits"],
-    #     dn_boxes=outputs["dn_boxes"],
-    #     dn_meta=outputs["dn_meta"]
-    # )
-
-    # loss_value = losses['loss_total']
-    # print("Loss:", loss_value.item())
-    # loss_value.backward()
-    # print("BackPropogation successful")
-    # trainer.optimizer.step()
-    # print("Optimizer step successful")
-
     trainer.fit(
         train_loader=train_dataloader,
         val_loader=val_dataloader,
         num_epochs=config.n_epochs
     )
+
+    #Run Detection after training
+    images, targets = next(iter(val_dataloader))
+
+    images = images.to(config.device)
+    targets = trainer.move_targets_to_device(targets)
+
+    # print("Validation Ground Truth Labels:", targets[0]["labels"])
+
+    val_detections = get_detection(
+        model=trainer.model,
+        images=images,
+        confidence_threshold=0.1
+    )
+
+    for i, detection in enumerate(val_detections):
+        print(f"\nimage:{i}")
+
+        print("Validation GT:", targets[i]["labels"].tolist())
+        print("Validation Pred labels:", detection["labels"].tolist())
+        print("Validation Scores:", detection["scores"].tolist())
+
+    #Inspect strongest 10 queries
+    inspect_top_predictions(
+        trainer.model,
+        images,
+        targets
+    )
+
+
+     #Run Detection after training
+    train_images, train_targets = next(iter(train_dataloader))
+
+    train_images = train_images.to(config.device)
+    train_targets = trainer.move_targets_to_device(train_targets)
+
+    # print("Trainer Ground Truth Labels:", train_targets[0]["labels"])
+
+    train_detections = get_detection(
+        model=trainer.model,
+        images=train_images,
+        confidence_threshold=0.1
+    )
+
+    for i, detection in enumerate(train_detections):
+        print(f"\nimage:{i}")
+
+        print("Trainer GT:", train_targets[i]["labels"].tolist())
+        print("Trainer Pred labels:", detection["labels"].tolist())
+        print("Trainer Scores:", detection["scores"].tolist())
+
+    #Inspect strongest 10 queries
+    inspect_top_predictions(
+        trainer.model,
+        train_images,
+        train_targets
+    )
+    
+
 
     Visualize_loss_acc(train_loss=trainer.train_loss,
                        val_loss=trainer.val_loss,

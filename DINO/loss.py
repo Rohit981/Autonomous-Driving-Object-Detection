@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from torchvision.ops import generalized_box_iou
 from .matcher import HungarianMatcher
+from Utils import box_cxcywh_to_xyxy
 
 class DINOLoss(nn.Module):
     def __init__(self,
@@ -26,31 +27,7 @@ class DINOLoss(nn.Module):
         self.weight_bbox = weight_bbox
         self.weight_giou = weight_giou
 
-
-    #Box Conversion
-
-    @staticmethod
-    def box_cxcywh_to_xyxy(boxes):
-
-        cx,cy,w,h = boxes.unbind(
-            dim=-1
-        )
-
-        x1 = cx - 0.5 * w
-        y1 = cy - 0.5 * h
-
-        x2 = cx + 0.5 * w
-        y2 = cy + 0.5 * h
-
-        return torch.stack(
-            [x1,
-            y1,
-            x2,
-            y2
-            ],
-            dim=-1
-        )
-
+   
     #Sigmoid Focal Loss
     def sigmoid_focal_loss(
             self,
@@ -211,13 +188,13 @@ class DINOLoss(nn.Module):
 
         #GIOU Loss
         src_boxes_xyxy = (
-            self.box_cxcywh_to_xyxy(
+            box_cxcywh_to_xyxy(
                 src_boxes
             )
         )
 
         target_boxes_xyxy = (
-            self.box_cxcywh_to_xyxy(
+            box_cxcywh_to_xyxy(
                 target_boxes
             )
         )
@@ -428,8 +405,8 @@ class DINOLoss(nn.Module):
             )
 
             #GIOU loss
-            pred_boxes_xyxy = self.box_cxcywh_to_xyxy(pred_boxes)
-            target_boxes_xyxy = self.box_cxcywh_to_xyxy(target_boxes)
+            pred_boxes_xyxy = box_cxcywh_to_xyxy(pred_boxes)
+            target_boxes_xyxy = box_cxcywh_to_xyxy(target_boxes)
 
             giou = generalized_box_iou(
                 pred_boxes_xyxy,
