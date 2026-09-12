@@ -7,7 +7,12 @@ import transform
 from DINO import loss,model
 from DINO.matcher import HungarianMatcher
 from Trainer import ModelTrainer
-from Utils import Visualize_loss_acc, get_detection, inspect_top_predictions
+from Utils import (Visualize_loss_acc, 
+                   get_detection, 
+                   inspect_top_predictions,
+                   inspect_predboxes_center,
+                   visualize_detection)
+import torch
 
 def main():
     # model = YOLO('yolo11n.pt')
@@ -99,18 +104,32 @@ def main():
         num_epochs=config.n_epochs
     )
 
+
     #Run Detection after training
     images, targets = next(iter(val_dataloader))
 
     images = images.to(config.device)
     targets = trainer.move_targets_to_device(targets)
 
-    # print("Validation Ground Truth Labels:", targets[0]["labels"])
+    inspect_predboxes_center(
+        model=trainer.model,
+        images=images,
+        targets=targets
+    )
 
     val_detections = get_detection(
         model=trainer.model,
         images=images,
         confidence_threshold=0.1
+    )
+
+    visualize_detection(
+        model=trainer.model,
+        images=images,
+        targets=targets,
+        class_names=config.CLASS_NAMES,
+        confidence_threshold=0.1,
+        max_images=5
     )
 
     for i, detection in enumerate(val_detections):
@@ -134,7 +153,11 @@ def main():
     train_images = train_images.to(config.device)
     train_targets = trainer.move_targets_to_device(train_targets)
 
-    # print("Trainer Ground Truth Labels:", train_targets[0]["labels"])
+    inspect_predboxes_center(
+        model=trainer.model,
+        images=train_images,
+        targets=train_targets
+    )
 
     train_detections = get_detection(
         model=trainer.model,
